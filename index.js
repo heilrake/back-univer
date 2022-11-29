@@ -1,22 +1,70 @@
 import express from 'express';
+import fs from 'fs';
+import multer from 'multer';
+import cors from 'cors';
+
 import mongoose from 'mongoose';
 
-const PORT = process.env.PORT || 5000;
-import { authRouter, postRouter } from './routers/index.js';
+import { registerValidation, loginValidation, postCreateValidation } from './valitations.js';
+
+import { handleValidationErrors, checkAuth } from './utils/index.js';
+
+import { UserController, PostController } from './controllers/index.js';
+
+mongoose
+   .connect('mongodb+srv://heilrake:heilrake@cluster0.r85yakw.mongodb.net/?retryWrites=true&w=majority')
+   .then(() => console.log('DB ok'))
+   .catch((err) => console.log('DB error', err));
 
 const app = express();
 
-app.use(express.json()); // mojem pasrit' json
-app.use('/auth', authRouter);
+const storage = multer.diskStorage({
+   destination: (_, __, cb) => {
+      if (!fs.existsSync('uploads')) {
+         fs.mkdirSync('uploads');
+      }
+      cb(null, 'uploads');
+   },
+   filename: (_, file, cb) => {
+      cb(null, file.originalname);
+   },
+});
 
-const start = async () => {
-   try {
-      await mongoose.connect('mongodb+srv://qwer12:380638132867@cluster0.ozuitzx.mongodb.net/market?retryWrites=true&w=majority').then(() => console.log('DB is ok'));
-      app.listen(PORT, () => console.log(`Server started to PORT ${PORT}`));
-   }
-   catch (error) {
-      console.log(error);
-   }
-};
+const upload = multer({ storage });
 
-start();
+app.use(express.json());
+app.use(cors());
+app.use('/uploads', express.static('uploads'));
+
+app.post('/auth/login', loginValidation, handleValidationErrors, UserController.login);
+app.post('/auth/register', registerValidation, handleValidationErrors, UserController.register);
+app.get('/auth/me', checkAuth, UserController.getMe);
+
+app.post('/upload', checkAuth, upload.single('image'), (req, res) => {
+   res.json({
+      url: `/uploads/${req.file.originalname}`,
+   });
+});
+
+app.get('/tags', PostController.getLastTags);
+
+app.get('/posts', PostController.getAll);
+app.get('/posts/tags', PostController.getLastTags);
+app.get('/posts/:id', PostController.getOne);
+app.post('/posts', checkAuth, postCreateValidation, handleValidationErrors, PostController.create);
+app.delete('/posts/:id', checkAuth, PostController.remove);
+app.patch(
+   '/posts/:id',
+   checkAuth,
+   postCreateValidation,
+   handleValidationErrors,
+   PostController.update,
+);
+
+app.listen(process.env.PORT || 4444, (err) => {
+   if (err) {
+      return console.log(err);
+   }
+
+   console.log('Server OK');
+});

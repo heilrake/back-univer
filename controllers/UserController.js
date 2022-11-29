@@ -1,24 +1,19 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import { validationResult } from 'express-validator';
 
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import UserModel from '../models/User.js';
 
-const registration = async (req, res) => {
+export const register = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ message: 'Error registration ', errors });
-    }
-
     const password = req.body.password;
-    const hashPassword = bcrypt.hashSync(password, 7);
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
 
     const doc = new UserModel({
       email: req.body.email,
       fullName: req.body.fullName,
       avatarUrl: req.body.avatarUrl,
-      passwordHash: hashPassword,
+      passwordHash: hash,
     });
 
     const user = await doc.save();
@@ -47,7 +42,7 @@ const registration = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const user = await UserModel.findOne({ email: req.body.email });
 
@@ -89,7 +84,7 @@ const login = async (req, res) => {
   }
 };
 
-const getMe = async (req, res) => {
+export const getMe = async (req, res) => {
   try {
     const user = await UserModel.findById(req.userId);
 
@@ -109,4 +104,3 @@ const getMe = async (req, res) => {
     });
   }
 };
-export { registration, login, getMe };

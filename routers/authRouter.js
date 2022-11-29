@@ -1,10 +1,6 @@
 import Router from 'express';
-import { roleMiddleware } from '../middleware/index.js';
 
-// const roleMiddleware = require('../middleware/roleMiddleware');
-// const authMiddleware = require('../middleware/authMiddleware');
-// const controller = require('../controllers/authController');
-import { getUsers, login, registration } from '../../controllers/authController.js';
+import { getMe, registration, login } from '../controllers/authController.js';
 import { registrationValidation } from '../validators/registrationValidation.js';
 
 const router = new Router();
