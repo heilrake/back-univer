@@ -15,11 +15,12 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    role: { type: String, default: "USER" },
     avatarUrl: String,
   },
-  {
-    timestamps: true,
-  },
+  // {
+  //   timestamps: true,
+  // },
 );
 
 export default mongoose.model('User', UserSchema);
